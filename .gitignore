@@ -1,0 +1,61 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# PyInstaller
+# Usually creates a /dist folder and build artifacts
+dist/
+build/
+*.spec
+
+# Unit test / coverage reports
+.coverage
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# PyCharm IDE
+.idea/
+
+# VS Code IDE
+.vscode/
+
+# Logs
+*.log
+
+# dotenv environment variables
+*.env
+.env.*
+
+# SQLite database files
+*.sqlite3
+*.db
+
+# macOS / Windows OS junk files
+.DS_Store
+Thumbs.db
