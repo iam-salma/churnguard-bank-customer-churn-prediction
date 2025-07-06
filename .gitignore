@@ -59,3 +59,8 @@ dmypy.json
 # macOS / Windows OS junk files
 .DS_Store
 Thumbs.db
+
+# logs and regression logs
+logs/
+regressionlogs/
+*.log

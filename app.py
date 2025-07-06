@@ -1,70 +1,88 @@
 import streamlit as st
-import numpy as np
 import tensorflow as tf
-from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 import pandas as pd
+import numpy as np
 import pickle
 
-# Load the trained model
-model = tf.keras.models.load_model('model.h5')
+# Load model and preprocessing tools
+try:
+    model = tf.keras.models.load_model('model/model.h5')
+    with open('model/onehot_encoder_geo.pkl', 'rb') as f:
+        onehot_encoder_geo = pickle.load(f)
+    with open('model/label_encoder_gender.pkl', 'rb') as f:
+        label_encoder_gender = pickle.load(f)
+    with open('model/scaler.pkl', 'rb') as f:
+        scaler = pickle.load(f)
+except Exception as e:
+    st.error(f"Error loading model or preprocessing files: {e}")
+    st.stop()
 
-# Load the encoders and scaler
-with open('label_encoder_gender.pkl', 'rb') as file:
-    label_encoder_gender = pickle.load(file)
+# Streamlit UI
+st.title('🧠 Customer Churn Prediction App')
 
-with open('onehot_encoder_geo.pkl', 'rb') as file:
-    onehot_encoder_geo = pickle.load(file)
+with st.form("churn_form"):
+    st.subheader("Enter Customer Details")
+    geography = st.selectbox('🌍 Geography', onehot_encoder_geo.categories_[0])
+    gender = st.selectbox('🧑 Gender', label_encoder_gender.classes_)
+    age = st.slider('🎂 Age', 18, 92)
+    
+    try:
+        credit_score = float(st.text_input('💳 Credit Score', value="650"))
+    except:
+        credit_score = 650.0
+        st.warning("Invalid Credit Score input. Defaulting to 650.")
 
-with open('scaler.pkl', 'rb') as file:
-    scaler = pickle.load(file)
+    try:
+        balance = float(st.text_input('💰 Balance', value="0.0"))
+    except:
+        balance = 0.0
+        st.warning("Invalid Balance input. Defaulting to 0.0.")
 
+    try:
+        estimated_salary = float(st.text_input('📈 Estimated Salary', value="50000"))
+    except:
+        estimated_salary = 50000.0
+        st.warning("Invalid Salary input. Defaulting to 50000.")
 
-## streamlit app
-st.title('Customer Churn PRediction')
+    tenure = st.slider('⌛ Tenure (Years)', 0, 10)
+    num_of_products = st.slider('📦 Number of Products', 1, 4)
+    has_cr_card = st.selectbox('💳 Has Credit Card', [0, 1])
+    is_active_member = st.selectbox('📶 Is Active Member', [0, 1])
+    
+    submitted = st.form_submit_button("🔍 Predict Churn")
 
-# User input
-geography = st.selectbox('Geography', onehot_encoder_geo.categories_[0])
-gender = st.selectbox('Gender', label_encoder_gender.classes_)
-age = st.slider('Age', 18, 92)
-balance = st.number_input('Balance')
-credit_score = st.number_input('Credit Score')
-estimated_salary = st.number_input('Estimated Salary')
-tenure = st.slider('Tenure', 0, 10)
-num_of_products = st.slider('Number of Products', 1, 4)
-has_cr_card = st.selectbox('Has Credit Card', [0, 1])
-is_active_member = st.selectbox('Is Active Member', [0, 1])
+if submitted:
+    try:
+        with st.spinner("Predicting..."):
+            # Prepare input data
+            input_data = pd.DataFrame({
+                'CreditScore': [credit_score],
+                'Gender': [label_encoder_gender.transform([gender])[0]],
+                'Age': [age],
+                'Tenure': [tenure],
+                'Balance': [balance],
+                'NumOfProducts': [num_of_products],
+                'HasCrCard': [has_cr_card],
+                'IsActiveMember': [is_active_member],
+                'EstimatedSalary': [estimated_salary]
+            })
 
-# Prepare the input data
-input_data = pd.DataFrame({
-    'CreditScore': [credit_score],
-    'Gender': [label_encoder_gender.transform([gender])[0]],
-    'Age': [age],
-    'Tenure': [tenure],
-    'Balance': [balance],
-    'NumOfProducts': [num_of_products],
-    'HasCrCard': [has_cr_card],
-    'IsActiveMember': [is_active_member],
-    'EstimatedSalary': [estimated_salary]
-})
+            # One-hot encode Geography
+            geo_encoded = onehot_encoder_geo.transform([[geography]])
+            geo_encoded_df = pd.DataFrame(geo_encoded.toarray(), columns=onehot_encoder_geo.get_feature_names_out(['Geography']))
 
-# One-hot encode 'Geography'
-geo_encoded = onehot_encoder_geo.transform([[geography]]).toarray()
-geo_encoded_df = pd.DataFrame(geo_encoded, columns=onehot_encoder_geo.get_feature_names_out(['Geography']))
+            # Combine and scale
+            input_full = pd.concat([input_data, geo_encoded_df], axis=1)
+            input_scaled = scaler.transform(input_full)
 
-# Combine one-hot encoded columns with input data
-input_data = pd.concat([input_data.reset_index(drop=True), geo_encoded_df], axis=1)
+            # Predict
+            prediction = model.predict(input_scaled)[0][0]
+            st.success(f"📊 Churn Probability: **{prediction:.2f}**")
 
-# Scale the input data
-input_data_scaled = scaler.transform(input_data)
+            if prediction > 0.5:
+                st.error("⚠️ The customer is **likely to churn**.")
+            else:
+                st.success("✅ The customer is **not likely to churn**.")
 
-
-# Predict churn
-prediction = model.predict(input_data_scaled)
-prediction_proba = prediction[0][0]
-
-st.write(f'Churn Probability: {prediction_proba:.2f}')
-
-if prediction_proba > 0.5:
-    st.write('The customer is likely to churn.')
-else:
-    st.write('The customer is not likely to churn.')
+    except Exception as e:
+        st.error(f"Prediction failed: {e}")
