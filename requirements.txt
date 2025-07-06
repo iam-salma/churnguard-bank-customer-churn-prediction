@@ -1,5 +1,5 @@
 ipykernel
-tensorflow
+tensorflow-cpu==2.11.0
 pandas
 numpy
 scikit-learn
