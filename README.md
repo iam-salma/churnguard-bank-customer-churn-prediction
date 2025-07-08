@@ -63,7 +63,7 @@ This helped improve model performance through systematic search and cross-valida
 
 The app allows users to input customer details and get a live prediction on their churn probability.
 
-![streamlit-screenshot](Screenshot.png)
+🌐 [Check out the live Streamlit app here](https://churnguard-bank-customer-churn-prediction.streamlit.app/)
 
 ## ▶️ Getting Started Locally
 
